@@ -19,7 +19,6 @@ const AddOrder = async (req, res) => {
       return ApiResponse(res, false, "Missing required fields", 400);
     }
 
-    // Placing Order
     const newOrder = new Order({
       Font,
       Text,
@@ -33,13 +32,13 @@ const AddOrder = async (req, res) => {
 
     await newOrder.save();
 
-    // Reduce Order Functionality
     const FoundProduct = await Product.findById(BaseProduct);
 
     if (!FoundProduct) {
       return ApiResponse(res, false, "Product not found", 400);
     }
 
+    // Reduce Order Functionality
     FoundProduct.Stock = FoundProduct.Stock - Quantity;
     await FoundProduct.save();
 
