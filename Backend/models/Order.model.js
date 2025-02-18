@@ -1,13 +1,11 @@
-// https://youtu.be/VbGl3msgce8?list=PLu71SKxNbfoBGh_8p_NS-ZAh6v7HhYqHW&t=2866
-
 import mongoose, { model, Schema } from "mongoose";
 
 const OrderSchema = Schema({
-  BaseProduct: {
+  ProductId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
   },
-  Customer: {
+  CustomerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
@@ -16,6 +14,9 @@ const OrderSchema = Schema({
   },
   Font: {
     type: String,
+  },
+  FontSize: {
+    type: Number,
   },
   Text: {
     type: String,
@@ -34,7 +35,7 @@ const OrderSchema = Schema({
     type: Number,
     require: true,
   },
-  State: {
+  Status: {
     type: String,
     enum: ["Process", "Ready", "Shipped", "Completed"],
     default: "Process",

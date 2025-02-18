@@ -7,6 +7,7 @@ import DeleteProduct from "../Controllers/ProductControllers/DeleteProduct.Contr
 import GetAllProduct from "../Controllers/ProductControllers/GetAllProduct.Controller.js";
 import { upload } from "../middleware/multer.middleware.js";
 import GetSingleProduct from "../Controllers/ProductControllers/GetSingleProduct.Controller.js";
+import GetAllCustomer from "../Controllers/ProductControllers/GetAllCustomer.Controller.js";
 
 const router = Router();
 
@@ -21,4 +22,5 @@ router.post(
 router.delete("/delete/:id", VerifyAdmin, DeleteProduct);
 router.get("/single-product/:id", VerifyJWT, GetSingleProduct);
 router.get("/get-all-products", VerifyJWT, GetAllProduct);
+router.get("/get-all-customers", VerifyJWT, GetAllCustomer);
 export default router;

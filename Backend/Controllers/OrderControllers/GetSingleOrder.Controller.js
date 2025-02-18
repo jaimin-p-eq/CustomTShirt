@@ -7,10 +7,15 @@ const GetSingleOrder = async (req, res) => {
 
     const SingleOrder = await Order.findById(id);
 
+    const populatedOrder = await Order.findById(SingleOrder._id)
+      .populate("ProductId")
+      .populate("CustomerId")
+      .exec();
+
     return ApiResponse(
       res,
       true,
-      SingleOrder,
+      populatedOrder,
       "Product Fetched successfully",
       200
     );

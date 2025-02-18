@@ -4,54 +4,83 @@ import ApiResponse from "../../Utils/ApiResponse.js";
 
 const AddOrder = async (req, res) => {
   try {
-    const {
-      Font,
-      Text,
-      Color,
-      Quantity,
-      FinalCost,
-      State,
-      BaseProduct,
-      Customer,
-    } = req.body;
+    const orders = req.body;
+    const CustomerId = req.user._id;
 
-    if (!BaseProduct || !Customer || !FinalCost) {
-      return ApiResponse(res, false, "Missing required fields", 400);
+    if (!Array.isArray(orders) || orders.length === 0) {
+      return ApiResponse(
+        res,
+        false,
+        "Orders should be an array with at least one order",
+        400
+      );
     }
 
-    const newOrder = new Order({
-      Font,
-      Text,
-      Color,
-      Quantity,
-      FinalCost,
-      State,
-      BaseProduct,
-      Customer,
-    });
+    const createdOrders = [];
 
-    await newOrder.save();
+    for (const orderData of orders) {
+      const { Font, FontSize, Text, Color, Quantity, FinalCost, ProductId } =
+        orderData;
 
-    const FoundProduct = await Product.findById(BaseProduct);
+      if (
+        !ProductId ||
+        !Font ||
+        !FontSize ||
+        !Text ||
+        !Color ||
+        !Quantity ||
+        !FinalCost
+      ) {
+        return ApiResponse(res, false, "Missing required fields", 400);
+      }
 
-    if (!FoundProduct) {
-      return ApiResponse(res, false, "Product not found", 400);
+      // Create a new order for each item in the request body
+      const newOrder = new Order({
+        Font,
+        FontSize,
+        Text,
+        Color,
+        Quantity,
+        FinalCost,
+        ProductId,
+        CustomerId,
+      });
+
+      // Save the new order to the database
+      await newOrder.save();
+      createdOrders.push(newOrder);
+
+      const foundProduct = await Product.findById(ProductId);
+
+      if (!foundProduct) {
+        return ApiResponse(
+          res,
+          false,
+          `Product with ID ${ProductId} not found`,
+          400
+        );
+      }
+
+      // Reduce the stock of the product
+      foundProduct.Stock -= Quantity;
+
+      if (foundProduct.Stock < 0) {
+        return ApiResponse(
+          res,
+          false,
+          `Insufficient stock for product ${ProductId}`,
+          400
+        );
+      }
+
+      await foundProduct.save();
     }
-
-    // Reduce Order Functionality
-    FoundProduct.Stock = FoundProduct.Stock - Quantity;
-    await FoundProduct.save();
-
-    const populatedOrder = await Order.findById(newOrder._id)
-      .populate("BaseProduct")
-      .populate("Customer")
-      .exec();
 
     return ApiResponse(
       res,
       true,
-      populatedOrder,
-      "Order added successfully",
+      createdOrders,
+      "Orders added successfully",
       200
     );
   } catch (error) {

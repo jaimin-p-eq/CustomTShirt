@@ -4,12 +4,12 @@ import AddOrder from "../Controllers/OrderControllers/Addorder.Controller.js";
 import { upload } from "../middleware/multer.middleware.js";
 import GetAllOrder from "../Controllers/OrderControllers/GetAllOrder.Controller.js";
 import VerifyAdmin from "../middleware/VerifyAdmin.js";
-import UpdateOrderState from "../Controllers/OrderControllers/UpdateOrderState.Controller.js";
+import UpdateOrderStatus from "../Controllers/OrderControllers/UpdateOrderStatus.Controller.js";
 import GetSingleOrder from "../Controllers/OrderControllers/GetSingleOrder.Controller.js";
 
-const route = Router();
+const router = Router();
 
-route.post(
+router.post(
   "/add-order",
   VerifyJWT,
   upload.fields([
@@ -19,8 +19,8 @@ route.post(
   AddOrder
 );
 
-route.post("/update-state/:id", VerifyAdmin, UpdateOrderState);
-route.get("/single-order/:id", VerifyAdmin, GetSingleOrder);
-route.get("/get-all-orders", VerifyJWT, GetAllOrder);
+router.post("/update-state/:id", VerifyAdmin, UpdateOrderStatus);
+router.get("/single-order/:id", VerifyAdmin, GetSingleOrder);
+router.get("/get-all-orders", VerifyAdmin, GetAllOrder);
 
-export default route;
+export default router;

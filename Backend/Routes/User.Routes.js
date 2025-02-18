@@ -11,6 +11,7 @@ import MakeAdmin from "../Controllers/UserControllers/MakeAdmin.Controller.js";
 import VerifyAdmin from "../middleware/VerifyAdmin.js";
 import GetSingleUser from "../Controllers/UserControllers/GetSingleUser.Controller.js";
 import RefreshAccessToken from "../Controllers/UserControllers/RefreshAccessToken.controller.js";
+import GetAllOwnOrder from "../Controllers/UserControllers/GetAllOwnOrder.Controller.js";
 
 const router = Router();
 
@@ -31,5 +32,6 @@ router.get("/single-user/:id", VerifyAdmin, GetSingleUser);
 router.post("/update-user", VerifyJWT, UpdateUser);
 router.delete("/delete/:id", VerifyJWT, DeleteUser);
 router.post("/logout", VerifyJWT, LogoutUser);
+router.post("/get-all-own-orders", VerifyJWT, GetAllOwnOrder);
 
 export default router;

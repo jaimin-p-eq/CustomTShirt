@@ -3,12 +3,17 @@ import ApiResponse from "../../Utils/ApiResponse.js";
 
 const GetAllOrder = async (req, res) => {
   try {
-    const Orders = await Order.find({});
+    // Find all orders and populate 'ProductId' and 'CustomerId' fields
+    const orders = await Order.find({})
+      .populate("ProductId") // Populate the ProductId field
+      .populate("CustomerId") // Populate the CustomerId field
+      .exec();
 
+    // Return response with populated orders
     return ApiResponse(
       res,
       true,
-      Orders,
+      orders,
       "All Orders Fetched Successfully",
       200
     );
