@@ -27,10 +27,18 @@ const RegisterUser = async (req, res) => {
       OTPExpiry,
     });
 
-    const textContent = `Your OTP code is ${OTP}. It will expire in 10 minutes.`;
+    const htmlContent = `
+      <p>Hello, ${FullName}</p>
+      <p>Thank you for registering with WearMyArt!</p>
+      <p>Your OTP code is <strong>${OTP}</strong>. It will expire in 10 minutes.</p>
+      <p>Please enter this OTP code in the registration form to complete your registration.</p>
+      <p>If you encounter any issues, feel free to contact our support team.</p>
+      <p>Thank you for choosing WearMyArt!</p>
+    `;
+
     const name = "WearMyArt Registration";
     const subject = "Registration code of WearMyArt";
-    const otpResponse = await SendOTP(Email, name, subject, textContent);
+    const otpResponse = await SendOTP(Email, name, subject, htmlContent);
 
     if (!otpResponse.success) {
       return ApiResponse(res, false, otpResponse.message, 500);

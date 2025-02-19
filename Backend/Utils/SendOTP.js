@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const SendOTP = async (email, name, subject, textContent) => {
+const SendOTP = async (email, name, subject, htmlContent) => {
   const brevoApiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.SENDER_EMAIL;
 
@@ -21,7 +21,7 @@ const SendOTP = async (email, name, subject, textContent) => {
     sender: { email: senderEmail, name },
     to: [{ email }],
     subject,
-    textContent,
+    htmlContent,
   };
 
   try {

@@ -7,7 +7,9 @@ const LogoutUser = async (req, res) => {
       secure: true,
     };
 
-    res.clearCookie("Authorization", options);
+    res
+      .clearCookie("AccessToken", options)
+      .clearCookie("RefreshToken", options);
 
     return ApiResponse(res, true, null, "User is succesfully Logout", 200);
   } catch (error) {

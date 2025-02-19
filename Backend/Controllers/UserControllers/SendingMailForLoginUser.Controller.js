@@ -25,12 +25,20 @@ const SendingMailForLoginUser = async (req, res) => {
     user.OTP = OTP;
     user.OTPExpiry = OTPExpiry;
 
-    const textContent = `Your OTP code is ${OTP}. It will expire in 10 minutes.`;
+    const htmlContent = `
+      <p>Hello, ${user.FullName}</p>
+      <p>You've requested to log in to WearMyArt. Your One-Time Password (OTP) code is: <strong>${OTP}</strong></p>
+      <p>This OTP will expire in 10 minutes, so please use it before it expires.</p>
+      <p>If you did not request this login, please ignore this email. Your account is secure.</p>
+      <p>If you encounter any issues or did not request this login attempt, please contact our support team.</p>
+      <p>Thank you for using WearMyArt!</p>
+    `;
+
     const name = "WearMyArt Login";
     const subject = "Login code of WearMyArt";
-    const otpResponse = await SendOTP(Email, name, subject, textContent);
+    const otpResponse = await SendOTP(Email, name, subject, htmlContent);
 
-    await user.save();
+    // await user.save();
 
     return ApiResponse(res, true, null, "OTP Sent Successfully", 200);
   } catch (error) {
