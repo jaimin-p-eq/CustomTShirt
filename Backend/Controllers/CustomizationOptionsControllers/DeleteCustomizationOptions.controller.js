@@ -18,16 +18,15 @@ const DeleteCustomizationOptions = async (req, res) => {
     }
 
     if (FontOptions) {
-      customizationOptions.FontOptions =
-        customizationOptions.FontOptions.filter(
-          (font) => !FontOptions.includes(font)
-        );
+      for (const font of FontOptions) {
+        customizationOptions.FontOptions.delete(font);
+      }
     }
 
     if (TextStyles) {
-      customizationOptions.TextStyles = customizationOptions.TextStyles.filter(
-        (style) => !TextStyles.includes(style)
-      );
+      for (const style of TextStyles) {
+        customizationOptions.TextStyles.delete(style);
+      }
     }
 
     await customizationOptions.save();

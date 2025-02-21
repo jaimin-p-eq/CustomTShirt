@@ -11,12 +11,17 @@ import GetAllCustomer from "../Controllers/ProductControllers/GetAllCustomer.Con
 
 const router = Router();
 
-router.post("/add-product", VerifyAdmin, upload.array("images", 5), AddProduct);
+router.post(
+  "/add-product",
+  VerifyAdmin,
+  upload.array("ProductImages", 5),
+  AddProduct
+);
 
 router.post(
   "/update-product",
   VerifyAdmin,
-  upload.array("images", 5),
+  upload.array("ProductImages", 5),
   UpdateProduct
 );
 router.delete("/delete/:id", VerifyAdmin, DeleteProduct);

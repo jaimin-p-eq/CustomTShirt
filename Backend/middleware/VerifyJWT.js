@@ -23,8 +23,8 @@ const VerifyJWT = async (req, res, next) => {
 
     req.user = user;
     next();
-  } catch (err) {
-    return ApiResponse(res, false, null, "Token is not valid", 401);
+  } catch (error) {
+    return ApiResponse(res, false, null, error.message, 401);
   }
 };
 

@@ -2,11 +2,14 @@ import { Schema, model } from "mongoose";
 
 const CustomizationOptionsSchema = new Schema({
   FontOptions: {
-    type: [String],
+    type: Map,
+    of: Number,
+    required: true,
   },
   TextStyles: {
-    type: [String],
-    // enum: ["Bold", "Italic", "Underline", "Regular"],
+    type: Map,
+    of: Number,
+    // Bold, Italic, Underline, Regular
   },
 });
 

@@ -4,10 +4,12 @@ const OrderSchema = Schema({
   ProductId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
+    require: true,
   },
   CustomerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    require: true,
   },
   CustomerImg: {
     type: String,
@@ -33,11 +35,10 @@ const OrderSchema = Schema({
   },
   FinalCost: {
     type: Number,
-    require: true,
   },
   Status: {
     type: String,
-    enum: ["Process", "Ready", "Shipped", "Completed"],
+    enum: ["Process", "Ready", "Shipped", "Completed", "Rejected"],
     default: "Process",
   },
 });

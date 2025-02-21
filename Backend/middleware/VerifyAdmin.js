@@ -3,7 +3,7 @@ import ApiResponse from "../Utils/ApiResponse.js";
 import User from "../models/User.model.js";
 
 const VerifyAdmin = async function (req, res, next) {
-  const token = req.cookies?.AccessToken || req.header("AccessToken");
+  const token = req.cookies?.RefreshToken || req.header("RefreshToken");
 
   if (!token) {
     return ApiResponse(res, false, null, "No token, authorization denied", 401);
@@ -26,9 +26,8 @@ const VerifyAdmin = async function (req, res, next) {
     }
     req.user = decodedUser;
     next();
-  } catch (err) {
-    console.error("Token verification failed:", err);
-    return ApiResponse(res, false, null, "Token is not valid", 401);
+  } catch (error) {
+    return ApiResponse(res, false, null, error.message, 401);
   }
 };
 

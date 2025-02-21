@@ -19,6 +19,10 @@ const LoginUser = async (req, res) => {
       return ApiResponse(res, false, "Invalid OTP", 400);
     }
 
+    if (user.OTPExpiry < Date.now()) {
+      return ApiResponse(res, false, "Invalid OTP", 400);
+    }
+
     const { AccessToken, RefreshToken } = GenerateAndSetTokens(user._id, res);
 
     const userResponse = user.toObject();

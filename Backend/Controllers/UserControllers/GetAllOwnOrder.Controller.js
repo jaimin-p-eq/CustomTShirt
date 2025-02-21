@@ -26,6 +26,8 @@ const GetAllOwnOrder = async (req, res) => {
       {
         $project: {
           orderId: 1,
+          CustomerImg: 1,
+          FinalProductImg: 1,
           Font: 1,
           Text: 1,
           Color: 1,

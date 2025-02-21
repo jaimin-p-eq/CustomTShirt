@@ -18,7 +18,7 @@ const UpdateOrderStatus = async (req, res) => {
       res,
       true,
       updatedOrder,
-      `Order state updated to '${status}' successfully`,
+      `Order status updated to '${status}' successfully`,
       200
     );
   } catch (error) {

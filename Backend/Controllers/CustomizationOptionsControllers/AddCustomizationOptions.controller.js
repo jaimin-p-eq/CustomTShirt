@@ -10,8 +10,8 @@ const AddCustomizationOptions = async (req, res) => {
     if (!customizationOptions) {
       // Create new customization options if none exist
       customizationOptions = new CustomizationOptions({
-        FontOptions,
-        TextStyles,
+        FontOptions: new Map(Object.entries(FontOptions)), // Convert to Map format
+        TextStyles: new Map(Object.entries(TextStyles)), // Convert to Map format
       });
 
       await customizationOptions.save();
@@ -24,23 +24,20 @@ const AddCustomizationOptions = async (req, res) => {
       );
     }
 
-    // Use Set to remove duplicates and add new options
+    // Update FontOptions if provided
     if (FontOptions) {
-      // Convert both the existing FontOptions and new FontOptions to Sets to ensure uniqueness
-      const updatedFontOptions = new Set([
-        ...customizationOptions.FontOptions,
-        ...FontOptions,
-      ]);
-      customizationOptions.FontOptions = Array.from(updatedFontOptions); // Convert Set back to array
+      // Loop through new FontOptions and update or add them to the existing Map
+      for (const [key, value] of Object.entries(FontOptions)) {
+        customizationOptions.FontOptions.set(key, value); // Set or update FontOption key-value pairs
+      }
     }
 
+    // Update TextStyles if provided
     if (TextStyles) {
-      // Convert both the existing TextStyles and new TextStyles to Sets to ensure uniqueness
-      const updatedTextStyles = new Set([
-        ...customizationOptions.TextStyles,
-        ...TextStyles,
-      ]);
-      customizationOptions.TextStyles = Array.from(updatedTextStyles); // Convert Set back to array
+      // Loop through new TextStyles and update or add them to the existing Map
+      for (const [key, value] of Object.entries(TextStyles)) {
+        customizationOptions.TextStyles.set(key, value); // Set or update TextStyle key-value pairs
+      }
     }
 
     await customizationOptions.save();
@@ -49,7 +46,7 @@ const AddCustomizationOptions = async (req, res) => {
       res,
       true,
       customizationOptions,
-      "Customization options added successfully"
+      "Customization options updated successfully"
     );
   } catch (error) {
     console.error(error);
