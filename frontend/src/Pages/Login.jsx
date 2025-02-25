@@ -1,24 +1,25 @@
-import { Button, TextField, IconButton } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import React, { useState } from "react";
 import ApiURLS from "../Data/ApiURLS";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { login } from "../Redux/UserSlice";
-import { IoEyeOutline } from "react-icons/io5";
-import { FaEyeSlash } from "react-icons/fa6";
 import { showToast } from "../Redux/toastSlice";
 
 const Login = () => {
   const [loginData, setLoginData] = useState({
-    email: "",
-    password: "",
+    Email: "",
+    OTP: ["", "", "", ""],
   });
 
   const [errors, setErrors] = useState({
-    email: "",
-    password: "",
+    Email: "",
+    OTP: "",
   });
+
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const dispatch = useDispatch();
   const Navigate = useNavigate();
@@ -27,28 +28,33 @@ const Login = () => {
     dispatch(showToast({ message, variant }));
   };
 
-  const [showPassword, setShowPassword] = useState(false);
-  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const EmailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setLoginData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+  const onChange = (e, index) => {
+    const { value } = e.target;
+    if (value.length <= 1) {
+      setLoginData((prevData) => {
+        const otpCopy = [...prevData.OTP];
+        otpCopy[index] = value;
+        return { ...prevData, OTP: otpCopy };
+      });
+      if (value && index < 3) {
+        document.getElementById(`otp-${index + 1}`).focus();
+      }
+    }
   };
 
   const validateForm = () => {
     let formValid = true;
-    const newErrors = { email: "", password: "" };
+    const newErrors = { Email: "", OTP: "" };
 
-    if (!emailRegex.test(loginData.email)) {
-      newErrors.email = "Invalid email format";
+    if (!EmailRegex.test(loginData.Email)) {
+      newErrors.Email = "Invalid Email format";
       formValid = false;
     }
 
-    if (loginData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters long";
+    if (isOtpSent && loginData.OTP.join("").length !== 4) {
+      newErrors.OTP = "OTP must be 4 digits";
       formValid = false;
     }
 
@@ -56,40 +62,57 @@ const Login = () => {
     return formValid;
   };
 
-  const onSubmit = async (e) => {
+  const onSubmitEmail = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
       return false;
     }
+    setIsLoading(true);
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}${ApiURLS.Login}`,
-        loginData
+        `${import.meta.env.VITE_BASE_URL}${ApiURLS.SendingMailForLoginUser}`,
+        { Email: loginData.Email }
       );
       if (res.data.success) {
-        dispatch(login(res.data.data.user));
+        setIsOtpSent(true);
         triggerToast(res.data.message, "success");
-        Navigate("/");
-      } else if (!res.data.success) {
+      } else {
         triggerToast(res.data.data, "error");
       }
     } catch (error) {
-      console.log("Error during registration:", error.message);
-      triggerToast(error.message, "error");
+      triggerToast(error.response.data.message, "error");
     }
+    setIsLoading(false);
   };
 
-  const NavigateToRegister = () => {
-    Navigate("/register");
-  };
+  const onSubmitOtp = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) {
+      return false;
+    }
+    setIsLoading(true);
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}${ApiURLS.Login}`,
+        { Email: loginData.Email, OTP: loginData.OTP.join("") }
+      );
 
-  const handleClickShowPassword = () => {
-    setShowPassword((prevState) => !prevState);
+      if (res.data.success) {
+        dispatch(login(res.data.data.user));
+        triggerToast(res.data.message, "success");
+        // Navigate("/");
+      } else {
+        triggerToast(res.data.data, "error");
+      }
+    } catch (error) {
+      triggerToast(error.response.data.message, "error");
+    }
+    setIsLoading(false);
   };
 
   return (
     <form
-      onSubmit={onSubmit}
+      onSubmit={isOtpSent ? onSubmitOtp : onSubmitEmail}
       className="flex justify-center items-center h-screen bg-gray-100"
     >
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
@@ -99,42 +122,37 @@ const Login = () => {
 
         <div className="flex flex-col gap-4">
           <TextField
-            id="email"
+            id="Email"
             label="Enter Email"
             variant="outlined"
-            name="email"
+            name="Email"
             type="email"
-            value={loginData.email}
-            onChange={onChange}
+            value={loginData.Email}
+            onChange={(e) =>
+              setLoginData({ ...loginData, Email: e.target.value })
+            }
             fullWidth
             className="input-field"
-            error={!!errors.email}
-            helperText={errors.email}
+            error={!!errors.Email}
+            helperText={errors.Email}
+            disabled={isOtpSent}
           />
-          <TextField
-            id="password"
-            label="Password"
-            variant="outlined"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={loginData.password}
-            onChange={onChange}
-            fullWidth
-            className="input-field"
-            error={!!errors.password}
-            helperText={errors.password}
-            InputProps={{
-              endAdornment: (
-                <IconButton
-                  position="end"
-                  onClick={handleClickShowPassword}
-                  edge="end"
-                >
-                  {showPassword ? <IoEyeOutline /> : <FaEyeSlash />}
-                </IconButton>
-              ),
-            }}
-          />
+
+          {isOtpSent && (
+            <div className="flex gap-2 items-center justify-center">
+              {loginData.OTP.map((digit, index) => (
+                <input
+                  key={index}
+                  id={`otp-${index}`}
+                  type="number"
+                  maxLength="1"
+                  value={digit}
+                  onChange={(e) => onChange(e, index)}
+                  className="w-12 h-12 text-center border rounded-lg focus:outline-none"
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-4">
@@ -143,16 +161,17 @@ const Login = () => {
             variant="contained"
             color="primary"
             fullWidth
-            className="mt-6 py-2 text-white font-semibold bg-blue-500 hover:bg-blue-600 rounded-lg"
+            className="btn btn-primary"
+            disabled={isLoading}
           >
-            Login
+            {isOtpSent ? "Verify OTP" : "Send OTP"}
           </Button>
         </div>
 
         <p className="text-center text-md mt-5">
           Don't have an account?{" "}
           <span
-            onClick={NavigateToRegister}
+            onClick={() => Navigate("/register")}
             className="cursor-pointer text-blue-500"
           >
             Register Here
