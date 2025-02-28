@@ -21,18 +21,18 @@ router.post(
   upload.array("ProductImages", 5),
   addProduct
 );
-router.post(
+router.put(
   "/update-product",
   (req, res, next) => tokenVerification(req, res, next, true),
   upload.array("ProductImages", 5),
   updateProduct
 );
-router.post(
+router.patch(
   "/discontinue-products",
   (req, res, next) => tokenVerification(req, res, next, true),
   disContinueProducts
 );
-router.post(
+router.patch(
   "/recontinue-products",
   (req, res, next) => tokenVerification(req, res, next, true),
   reContinueProducts

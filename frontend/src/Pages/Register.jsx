@@ -1,35 +1,46 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { showToast } from "../Redux/toastSlice";
+import { login } from "../Redux/UserSlice";
+import ApiURLS from "../Data/ApiURLS";
+import axios from "axios";
 import {
   Button,
   TextField,
   IconButton,
-  Checkbox,
-  FormControlLabel,
+  Container,
+  Paper,
+  Typography,
+  Box,
+  InputAdornment,
+  Stepper,
+  Step,
+  StepLabel,
 } from "@mui/material";
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { IoEyeOutline } from "react-icons/io5";
 import { FaEyeSlash } from "react-icons/fa6";
-import { useDispatch } from "react-redux";
-import { showToast } from "../Redux/toastSlice";
-import ApiURLS from "../Data/ApiURLS";
-import axios from "axios";
-import { login } from "../Redux/UserSlice";
+import { apiRequest } from "../utils/apiRequest.js";
+
+const steps = ["Register", "OTP Verification"];
 
 const Register = () => {
+  const [activeStep, setActiveStep] = useState(0);
   const [registerData, setRegisterData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    isAdmin: false,
+    FullName: "",
+    Email: "",
+    Password: "",
+    OTP: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({
-    name: "",
-    email: "",
-    password: "",
+    FullName: "",
+    Email: "",
+    Password: "",
+    OTP: "",
   });
 
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const onChange = (e) => {
@@ -40,33 +51,30 @@ const Register = () => {
     }));
   };
 
-  const handleAdminChange = (event) => {
-    setRegisterData((prevData) => ({
-      ...prevData,
-      isAdmin: event.target.checked,
-    }));
-  };
-
   const validateForm = () => {
     let formValid = true;
-    const newErrors = { name: "", email: "", password: "" };
+    const newErrors = { FullName: "", Email: "", Password: "", OTP: "" };
 
-    if (registerData.name.length < 6) {
-      newErrors.name = "Name must be at least 6 characters long";
-      formValid = false;
+    if (activeStep === 0) {
+      if (registerData.FullName.length < 6) {
+        newErrors.FullName = "FullName must be at least 6 characters long";
+        formValid = false;
+      }
+      const EmailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!EmailRegex.test(registerData.Email)) {
+        newErrors.Email = "Invalid Email format";
+        formValid = false;
+      }
+      if (registerData.Password.length < 6) {
+        newErrors.Password = "Password must be at least 6 characters long";
+        formValid = false;
+      }
+    } else {
+      if (!registerData.OTP) {
+        newErrors.OTP = "Enter the OTP sent to your Email";
+        formValid = false;
+      }
     }
-    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-    if (!emailRegex.test(registerData.email)) {
-      newErrors.email = "Invalid email format";
-      formValid = false;
-    }
-
-    if (registerData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters long";
-      formValid = false;
-    }
-
     setErrors(newErrors);
     return formValid;
   };
@@ -75,135 +83,129 @@ const Register = () => {
     dispatch(showToast({ message, variant }));
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      return false;
-    }
-
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}${ApiURLS.Register}`,
-        registerData
+  const handleNext = async () => {
+    if (!validateForm()) return;
+    if (activeStep === 0) {
+      const response = await apiRequest(
+        ApiURLS.Register.url,
+        ApiURLS.Register.method,
+        registerData,
+        dispatch
       );
-      if (res.data.success) {
-        dispatch(login(res.data.data.user));
-        triggerToast(res.data.message, "success");
-        Navigate("/");
-      } else if (!res.data.success) {
-        triggerToast(res.data.data, "error");
+      if (response.success) {
+        dispatch(showToast({ message: response.message, variant: "success" }));
+        setActiveStep(1);
       }
-    } catch (error) {
-      console.log("Error during registration:", error);
-      triggerToast(error.message, "error");
+    } else {
+      const otpNumber = parseInt(registerData.OTP, 10);
+      if (isNaN(otpNumber)) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          OTP: "Invalid OTP format",
+        }));
+        return;
+      }
+
+      const response = await apiRequest(
+        ApiURLS.ActivateUser.url,
+        ApiURLS.ActivateUser.method,
+        { Email: registerData.Email, OTP: registerData.OTP },
+        dispatch
+      );
+      if (response.success) {
+        dispatch(showToast({ message: response.message, variant: "success" }));
+        dispatch(login(response.data.user));
+        navigate("/");
+      }
     }
-  };
-
-  const NavigateToLogin = () => {
-    Navigate("/login");
-  };
-
-  const handleClickShowPassword = () => {
-    setShowPassword((prevState) => !prevState);
   };
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="flex justify-center items-center h-screen bg-gray-100"
-    >
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-3xl font-semibold text-center mb-6 text-gray-700">
-          Register
-        </h2>
+    <Container component="main" maxWidth="xs">
+      <Paper elevation={6} sx={{ padding: 4, marginTop: 8 }}>
+        <Stepper activeStep={activeStep} alternativeLabel>
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
 
-        <div className="flex flex-col gap-4">
-          <TextField
-            id="name"
-            label="Enter Name"
-            variant="outlined"
-            name="name"
-            type="text"
-            value={registerData.name}
-            onChange={onChange}
-            fullWidth
-            className="input-field"
-            error={!!errors.name}
-            helperText={errors.name}
-          />
-          <TextField
-            id="email"
-            label="Enter Email"
-            variant="outlined"
-            name="email"
-            type="email"
-            value={registerData.email}
-            onChange={onChange}
-            fullWidth
-            className="input-field"
-            error={!!errors.email}
-            helperText={errors.email}
-          />
-          <TextField
-            id="password"
-            label="Password"
-            variant="outlined"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={registerData.password}
-            onChange={onChange}
-            fullWidth
-            className="input-field"
-            error={!!errors.password}
-            helperText={errors.password}
-            InputProps={{
-              endAdornment: (
-                <IconButton
-                  position="end"
-                  onClick={handleClickShowPassword}
-                  edge="end"
-                >
-                  {showPassword ? <IoEyeOutline /> : <FaEyeSlash />}
-                </IconButton>
-              ),
-            }}
-          />
-
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={registerData.isAdmin}
-                onChange={handleAdminChange}
-                inputProps={{ "aria-label": "Admin checkbox" }}
+        <Box
+          component="form"
+          className="mt-[25px]"
+          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+        >
+          {activeStep === 0 ? (
+            <>
+              <TextField
+                label="FullName"
+                variant="outlined"
+                name="FullName"
+                value={registerData.FullName}
+                onChange={onChange}
+                fullWidth
+                error={!!errors.FullName}
+                helperText={errors.FullName}
               />
-            }
-            label="Admin"
-          />
-        </div>
+              <TextField
+                label="Email"
+                variant="outlined"
+                name="Email"
+                type="Email"
+                value={registerData.Email}
+                onChange={onChange}
+                fullWidth
+                error={!!errors.Email}
+                helperText={errors.Email}
+              />
+              <TextField
+                label="Password"
+                variant="outlined"
+                name="Password"
+                type={showPassword ? "text" : "Password"}
+                value={registerData.Password}
+                onChange={onChange}
+                fullWidth
+                error={!!errors.Password}
+                helperText={errors.Password}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                      >
+                        {showPassword ? <IoEyeOutline /> : <FaEyeSlash />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </>
+          ) : (
+            <TextField
+              label="Enter OTP"
+              variant="outlined"
+              name="OTP"
+              value={registerData.OTP}
+              onChange={onChange}
+              fullWidth
+              error={!!errors.OTP}
+              helperText={errors.OTP}
+            />
+          )}
 
-        <div className="mt-4">
           <Button
-            type="submit"
+            onClick={handleNext}
             variant="contained"
             color="primary"
             fullWidth
-            className="mt-6 py-2 text-white font-semibold bg-blue-500 hover:bg-blue-600 rounded-lg"
           >
-            Register
+            {activeStep === 0 ? "Next" : "Verify & Register"}
           </Button>
-        </div>
-
-        <p className="text-center text-md mt-5">
-          Already have an account?{" "}
-          <span
-            onClick={NavigateToLogin}
-            className="cursor-pointer text-blue-500"
-          >
-            Login Here
-          </span>
-        </p>
-      </div>
-    </form>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 

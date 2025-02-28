@@ -1,60 +1,61 @@
-import { Button, TextField } from "@mui/material";
 import React, { useState } from "react";
-import ApiURLS from "../Data/ApiURLS";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useDispatch } from "react-redux";
 import { login } from "../Redux/UserSlice";
 import { showToast } from "../Redux/toastSlice";
+import { IoEyeOutline } from "react-icons/io5";
+import { FaEyeSlash } from "react-icons/fa6";
+import ApiURLS from "../Data/ApiURLS";
+import { apiRequest } from "../utils/apiRequest";
+import {
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  IconButton,
+  InputAdornment,
+  Container,
+  Box,
+} from "@mui/material";
 
 const Login = () => {
   const [loginData, setLoginData] = useState({
     Email: "",
-    OTP: ["", "", "", ""],
-  });
-
-  const [errors, setErrors] = useState({
-    Email: "",
+    Password: "",
     OTP: "",
   });
-
+  const [errors, setErrors] = useState({ Email: "", Password: "", OTP: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isOtpButtonDisabled, setIsOtpButtonDisabled] = useState(false);
 
   const dispatch = useDispatch();
-  const Navigate = useNavigate();
-
-  const triggerToast = (message, variant) => {
-    dispatch(showToast({ message, variant }));
-  };
+  const navigate = useNavigate();
 
   const EmailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-  const onChange = (e, index) => {
-    const { value } = e.target;
-    if (value.length <= 1) {
-      setLoginData((prevData) => {
-        const otpCopy = [...prevData.OTP];
-        otpCopy[index] = value;
-        return { ...prevData, OTP: otpCopy };
-      });
-      if (value && index < 3) {
-        document.getElementById(`otp-${index + 1}`).focus();
-      }
-    }
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setErrors((prevData) => ({ ...prevData, [name]: "" }));
+    setLoginData((prevData) => ({ ...prevData, [name]: value }));
   };
 
   const validateForm = () => {
     let formValid = true;
-    const newErrors = { Email: "", OTP: "" };
+    const newErrors = { Email: "", Password: "", OTP: "" };
 
     if (!EmailRegex.test(loginData.Email)) {
       newErrors.Email = "Invalid Email format";
       formValid = false;
     }
 
-    if (isOtpSent && loginData.OTP.join("").length !== 4) {
-      newErrors.OTP = "OTP must be 4 digits";
+    if (!isOtpSent && loginData.Password.length < 6) {
+      newErrors.Password = "Password must be at least 6 characters long";
+      formValid = false;
+    }
+
+    if (isOtpSent && !loginData.OTP) {
+      newErrors.OTP = "Enter the OTP sent to your email";
       formValid = false;
     }
 
@@ -62,123 +63,151 @@ const Login = () => {
     return formValid;
   };
 
-  const onSubmitEmail = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (!validateForm()) {
-      return false;
+    if (!validateForm()) return;
+
+    let requestData = { Email: loginData.Email };
+
+    if (isOtpSent) {
+      requestData.OTP = loginData.OTP;
+    } else {
+      requestData.Password = loginData.Password;
     }
-    setIsLoading(true);
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}${ApiURLS.SendingMailForLoginUser}`,
-        { Email: loginData.Email }
-      );
-      if (res.data.success) {
-        setIsOtpSent(true);
-        triggerToast(res.data.message, "success");
-      } else {
-        triggerToast(res.data.data, "error");
-      }
-    } catch (error) {
-      triggerToast(error.response.data.message, "error");
+
+    const response = await apiRequest(
+      ApiURLS.Login.url,
+      ApiURLS.Login.method,
+      requestData,
+      dispatch
+    );
+
+    if (response.success) {
+      navigate("/");
     }
-    setIsLoading(false);
   };
 
-  const onSubmitOtp = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      return false;
+  const handleSendOtp = async () => {
+    if (!EmailRegex.test(loginData.Email)) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        Email: "Enter a valid email",
+      }));
+      return;
     }
-    setIsLoading(true);
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}${ApiURLS.Login}`,
-        { Email: loginData.Email, OTP: loginData.OTP.join("") }
-      );
 
-      if (res.data.success) {
-        dispatch(login(res.data.data.user));
-        triggerToast(res.data.message, "success");
-        // Navigate("/");
-      } else {
-        triggerToast(res.data.data, "error");
-      }
-    } catch (error) {
-      triggerToast(error.response.data.message, "error");
+    setIsOtpButtonDisabled(true);
+
+    const response = await apiRequest(
+      ApiURLS.SendingMailForLogin.url,
+      ApiURLS.SendingMailForLogin.method,
+      { Email: loginData.Email },
+      dispatch
+    );
+    if (response.success) {
+      setIsOtpSent(true);
+      dispatch(showToast({ message: response.message, variant: "success" }));
+    } else {
+      setIsOtpButtonDisabled(false);
     }
-    setIsLoading(false);
   };
 
   return (
-    <form
-      onSubmit={isOtpSent ? onSubmitOtp : onSubmitEmail}
-      className="flex justify-center items-center h-screen bg-gray-100"
-    >
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-3xl font-semibold text-center mb-6 text-gray-700">
+    <Container component="main" maxWidth="xs">
+      <Paper elevation={6} sx={{ padding: 4, marginTop: 8 }}>
+        <Typography variant="h4" align="center" gutterBottom>
           Login
-        </h2>
+        </Typography>
 
-        <div className="flex flex-col gap-4">
+        <Box
+          component="form"
+          onSubmit={handleLogin}
+          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+        >
           <TextField
-            id="Email"
-            label="Enter Email"
-            variant="outlined"
-            name="Email"
+            label="Email"
             type="email"
+            name="Email"
             value={loginData.Email}
-            onChange={(e) =>
-              setLoginData({ ...loginData, Email: e.target.value })
-            }
+            onChange={onChange}
             fullWidth
-            className="input-field"
             error={!!errors.Email}
             helperText={errors.Email}
-            disabled={isOtpSent}
+            variant="outlined"
           />
 
-          {isOtpSent && (
-            <div className="flex gap-2 items-center justify-center">
-              {loginData.OTP.map((digit, index) => (
-                <input
-                  key={index}
-                  id={`otp-${index}`}
-                  type="number"
-                  maxLength="1"
-                  value={digit}
-                  onChange={(e) => onChange(e, index)}
-                  className="w-12 h-12 text-center border rounded-lg focus:outline-none"
-                />
-              ))}
-            </div>
+          {!isOtpSent ? (
+            <TextField
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              name="Password"
+              value={loginData.Password}
+              onChange={onChange}
+              fullWidth
+              error={!!errors.Password}
+              helperText={errors.Password}
+              variant="outlined"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? <IoEyeOutline /> : <FaEyeSlash />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          ) : (
+            <TextField
+              label="OTP"
+              type="text"
+              name="OTP"
+              value={loginData.OTP}
+              onChange={onChange}
+              fullWidth
+              error={!!errors.OTP}
+              helperText={errors.OTP}
+              variant="outlined"
+            />
           )}
-        </div>
 
-        <div className="mt-4">
           <Button
             type="submit"
             variant="contained"
             color="primary"
             fullWidth
-            className="btn btn-primary"
-            disabled={isLoading}
+            sx={{ mt: 2 }}
           >
-            {isOtpSent ? "Verify OTP" : "Send OTP"}
+            {isOtpSent ? "Verify OTP & Login" : "Login"}
           </Button>
-        </div>
 
-        <p className="text-center text-md mt-5">
+          {!isOtpSent && (
+            <Button
+              variant="outlined"
+              color="primary"
+              fullWidth
+              onClick={handleSendOtp}
+              disabled={isOtpButtonDisabled}
+              sx={{ mt: 2 }}
+            >
+              Login Using OTP
+            </Button>
+          )}
+        </Box>
+
+        <Typography variant="body2" align="center" sx={{ mt: 3 }}>
           Don't have an account?{" "}
           <span
-            onClick={() => Navigate("/register")}
-            className="cursor-pointer text-blue-500"
+            onClick={() => navigate("/register")}
+            style={{ cursor: "pointer", color: "#1976d2" }}
           >
             Register Here
           </span>
-        </p>
-      </div>
-    </form>
+        </Typography>
+      </Paper>
+    </Container>
   );
 };
 

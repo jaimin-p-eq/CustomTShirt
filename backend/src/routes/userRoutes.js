@@ -36,23 +36,23 @@ router.get(
   (req, res, next) => tokenVerification(req, res, next, true),
   getSingleUser
 );
-router.get(
+router.patch(
   "/make-admin/:id",
   (req, res, next) => tokenVerification(req, res, next, true),
   makeAdmin
 );
-router.post(
+router.patch(
   "/block-users",
   (req, res, next) => tokenVerification(req, res, next, true),
   blockUsers
 );
-router.post(
+router.patch(
   "/unblock-users",
   (req, res, next) => tokenVerification(req, res, next, true),
   unblockUsers
 );
 
-router.post("/update-user", tokenVerification, updateUser);
+router.put("/update-user", tokenVerification, updateUser);
 router.delete("/delete", tokenVerification, deleteUser);
 router.post("/logout", tokenVerification, logoutUser);
 router.get("/get-all-own-orders", tokenVerification, getAllOwnOrder);

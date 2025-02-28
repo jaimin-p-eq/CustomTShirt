@@ -26,14 +26,14 @@ router.post(
   addToCartOrder
 );
 router.get("/get-cart-order", tokenVerification, getAllCartOrder);
-router.post("/cart-to-order", cartToOrder);
+router.post("/cart-to-order", tokenVerification, cartToOrder);
 router.post(
   "/add-order",
   tokenVerification,
   upload.single("FinalProductImg"),
   addOrder
 );
-router.post(
+router.patch(
   "/update-state/:id",
   (req, res, next) => tokenVerification(req, res, next, true),
   updateOrderStatus

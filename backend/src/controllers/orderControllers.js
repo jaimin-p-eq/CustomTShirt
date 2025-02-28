@@ -365,6 +365,8 @@ const initiateOrder = async (req, res) => {
       CustomerImg: `${CustomerImg}`,
     });
 
+    await redisClient.expire(OrderKey, 3600);
+
     return apiResponse(
       res,
       true,

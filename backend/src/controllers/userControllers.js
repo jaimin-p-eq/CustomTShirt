@@ -12,17 +12,61 @@ const generateOTP = () => {
 
   return { OTP, OTPExpiry };
 };
+const validatePassword = (password) => {
+  const minLength = 8;
+  const maxLength = 16;
+  const uppercaseRegex = /[A-Z]/;
+  const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+  const numericRegex = /[0-9]/;
 
-// Register and Verify First
+  if (password.length < minLength || password.length > maxLength) {
+    return {
+      success: false,
+      message: `Password must be between ${minLength} and ${maxLength} characters.`,
+    };
+  }
+
+  if (!uppercaseRegex.test(password)) {
+    return {
+      success: false,
+      message: "Password must contain at least one uppercase letter.",
+    };
+  }
+
+  if (!specialCharRegex.test(password)) {
+    return {
+      success: false,
+      message: "Password must contain at least one special character.",
+    };
+  }
+
+  if (!numericRegex.test(password)) {
+    return {
+      success: false,
+      message: "Password must contain at least one numerical character.",
+    };
+  }
+
+  return { success: true };
+};
+
+// Register and verify
 const registerUser = async (req, res) => {
   try {
     const { FullName, Email, Password } = req.body;
+
+    const passwordValidation = validatePassword(Password);
+    if (!passwordValidation.success) {
+      return apiResponse(res, false, null, passwordValidation.message, 400);
+    }
+
     const existedUser = await User.findOne({ Email });
 
     if (existedUser) {
       return apiResponse(
         res,
         false,
+        null,
         existedUser.isActive
           ? "User already exists"
           : "User exists but inactive",
@@ -79,15 +123,17 @@ const activateUser = async (req, res) => {
       return apiResponse(
         res,
         false,
+        null,
         "User does not exist with this email",
         401
       );
     }
 
-    if (OTP !== existedUser.OTP || existedUser.OTPExpiry < Date.now()) {
+    if (OTP != existedUser.OTP || existedUser.OTPExpiry < Date.now()) {
       return apiResponse(
         res,
         false,
+        null,
         "Invalid OTP or OTP has expired, please try again",
         401
       );
@@ -312,27 +358,39 @@ const forgotPassword = async (req, res) => {
     if (user.isBlocked) {
       return apiResponse(res, false, null, "User is Blocked", 400);
     }
-    if (OTP != user.OTP) {
+    if (OTP !== user.OTP) {
       return apiResponse(res, false, null, "Invalid OTP", 400);
     }
     if (user.OTPExpiry < Date.now()) {
       return apiResponse(res, false, null, "OTP Expired", 400);
     }
 
-    const saltRounds = 10;
-    const hashedPassword = bcrypt.hash(Password, saltRounds, (err) => {
-      if (err) {
-        return apiResponse(res, false, err.message, 500);
-      }
-    });
+    const passwordValidation = validatePassword(Password);
+    if (!passwordValidation.success) {
+      return apiResponse(res, false, null, passwordValidation.message, 400);
+    }
 
+    const hashedPassword = await bcrypt.hash(Password, 10);
     user.Password = hashedPassword;
-    await user.save();
+
+    await user.save({ validateBeforeSave: true });
 
     const userResponse = {
-      FullName: existedUser.FullName,
-      Email,
+      FullName: user.FullName,
+      Email: user.Email,
     };
+
+    const htmlContent = `
+  <p>Hello, ${user.FullName}</p>
+  <p>Your password has been changed successfully for WearMyArt.</p>
+  <p>If you did not request this change, please contact our support team immediately.</p>
+  <p>For security reasons, we recommend using a strong and unique password.</p>
+  <p>Thank you for choosing WearMyArt!</p>
+`;
+
+    const name = "WearMyArt Security";
+    const subject = "Your Password Has Been Changed Successfully";
+    const otpResponse = await sendMail(Email, name, subject, htmlContent);
 
     return apiResponse(
       res,
@@ -408,23 +466,61 @@ const getSingleUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { _id } = req.user;
-
     const { FullName, Email } = req.body;
 
-    const updatedUser = await User.findByIdAndUpdate(
-      _id,
-      { FullName, Email },
-      { new: true }
-    );
+    const updateData = {};
+    if (FullName) updateData.FullName = FullName;
+    if (Email) {
+      const existingUser = await User.findOne({ Email, _id: { $ne: _id } });
+      if (existingUser) {
+        return apiResponse(res, false, null, "Email is already in use", 400);
+      }
+      updateData.Email = Email;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return apiResponse(res, false, null, "No valid fields to update", 400);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(_id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedUser) {
       return apiResponse(res, false, null, "User not found", 404);
     }
 
     const userResponse = {
-      FullName,
-      Email,
+      FullName: updatedUser.FullName,
+      Email: updatedUser.Email,
     };
+
+    const htmlContent = `
+      <p>Hello, ${updatedUser.FullName}</p>
+      <p>Your profile details have been updated successfully on WearMyArt.</p>
+      <p>If you did not make these changes, please contact our support team immediately.</p>
+      <p>Thank you for being a part of WearMyArt!</p>
+    `;
+
+    const name = "WearMyArt Support";
+    const subject = "Your Profile Has Been Updated";
+    const emailResponse = await sendMail(
+      updatedUser.Email,
+      name,
+      subject,
+      htmlContent
+    );
+
+    if (!emailResponse.success) {
+      return apiResponse(
+        res,
+        true,
+        { user: userResponse },
+        "User updated, but email notification failed",
+        200
+      );
+    }
 
     return apiResponse(
       res,
@@ -466,7 +562,7 @@ const deleteUser = async (req, res) => {
 
     await DeleteUser.save();
 
-    return apiResponse(res, true, "User is succesfully Deleted", 200);
+    return apiResponse(res, true, null, "User is succesfully Deleted", 200);
   } catch (error) {
     return apiResponse(res, false, null, error.message, 500);
   }
