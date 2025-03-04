@@ -2,7 +2,7 @@ import axios from "axios";
 import { showToast } from "../Redux/toastSlice";
 
 export const apiRequest = async (url, method, data = {}, dispatch) => {
-  console.log(`${import.meta.env.VITE_BASE_URL}${url}`);
+  // console.log(`${import.meta.env.VITE_BASE_URL}${url}`);
 
   try {
     const response = await axios({
@@ -25,7 +25,7 @@ export const apiRequest = async (url, method, data = {}, dispatch) => {
       throw new Error(response.data.message || "Something went wrong");
     }
   } catch (error) {
-    console.error("API Error:", error);
+    // console.error("API Error:", error);
 
     const errorMessage =
       error?.response?.data?.message || "Something went wrong";
