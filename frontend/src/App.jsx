@@ -9,8 +9,10 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { CssBaseline } from "@mui/material";
 import { useSelector } from "react-redux";
 import Navbar from "./Components/Navbar.jsx";
-import Product from "./Pages/Product.jsx";
+import Products from "./Pages/Products.jsx";
 import OrderForm from "./Pages/OrderForm.jsx";
+import Product from "./Pages/Product.jsx";
+import Errorpage from "./Pages/Errorpage.jsx";
 
 function App() {
   const mode = useSelector((state) => state.theme.mode);
@@ -34,8 +36,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<AddProductForm />} />
-          <Route path="/product" element={<Product />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/product/:id" element={<Product />} />
           <Route path="/orderform" element={<OrderForm />} />
+          <Route path="*" element={<Errorpage />} />
         </Routes>
         <ToastNotification />
       </BrowserRouter>

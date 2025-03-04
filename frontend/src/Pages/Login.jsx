@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { login } from "../Redux/UserSlice";
-import { showToast } from "../Redux/toastSlice";
 import { IoEyeOutline } from "react-icons/io5";
 import { FaEyeSlash } from "react-icons/fa6";
 import ApiURLS from "../Data/ApiURLS";
@@ -104,12 +102,6 @@ const Login = () => {
       { Email: loginData.Email },
       dispatch
     );
-    if (response.success) {
-      setIsOtpSent(true);
-      dispatch(showToast({ message: response.message, variant: "success" }));
-    } else {
-      setIsOtpButtonDisabled(false);
-    }
   };
 
   return (

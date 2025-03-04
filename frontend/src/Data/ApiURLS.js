@@ -37,7 +37,7 @@ const ApiURLS = {
     url: "/api/product/get-low-stock-products",
     method: "GET",
   },
-  GetSingleProduct: { url: "/api/product/single-product/:id", method: "GET" },
+  GetSingleProduct: { url: "/api/product/single-product", method: "GET" },
   GetAllProduct: { url: "/api/product/get-all-products", method: "GET" },
   GetAllActiveProducts: {
     url: "/api/product/get-all-active-products",
